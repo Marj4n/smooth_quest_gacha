@@ -5,7 +5,6 @@ import org.Marj4n.smooth_quest_gacha.gacha.GachaRarity;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
@@ -15,49 +14,43 @@ import java.util.List;
 public class GachaScreen extends Screen {
 
     public record Result(ItemStack stack, GachaRarity rarity) {
-        public Result {
+        public Result { stack = stack.copy(); }
+    }
+
+    public record PoolSymbol(ItemStack stack, GachaRarity rarity, int weight) {
+        public PoolSymbol {
             stack = stack.copy();
+            weight = Math.max(1, weight);
         }
     }
 
     private static final int PER_PAGE = 8;
-    private static final int SPIN_TICKS = 58;
-    private static final int REVEAL_STAGGER = 3;
-    private static final int ROW_SPACING = 25;
-
-    private static final List<ItemStack> FILLER_ITEMS = List.of(
-            new ItemStack(Items.IRON_INGOT),
-            new ItemStack(Items.GOLD_INGOT),
-            new ItemStack(Items.REDSTONE),
-            new ItemStack(Items.EMERALD),
-            new ItemStack(Items.DIAMOND),
-            new ItemStack(Items.ENDER_PEARL),
-            new ItemStack(Items.AMETHYST_SHARD),
-            new ItemStack(Items.BLAZE_ROD),
-            new ItemStack(Items.BONE),
-            new ItemStack(Items.STRING),
-            new ItemStack(Items.GOLDEN_APPLE),
-            new ItemStack(Items.NETHERITE_SCRAP),
-            new ItemStack(Items.EXPERIENCE_BOTTLE),
-            new ItemStack(Items.SLIME_BALL),
-            new ItemStack(Items.BOOK),
-            new ItemStack(Items.GUNPOWDER)
-    );
+    private static final int SPIN_TICKS = 92;
+    private static final int REVEAL_STAGGER = 4;
+    private static final int ROW_SPACING = 27;
 
     private final List<Result> results;
+    private final List<PoolSymbol> poolSymbols;
     private int page = 0;
     private int tick = 0;
     private boolean pageFinished = false;
 
-    public GachaScreen(List<Result> results) {
+    public GachaScreen(List<Result> results, List<PoolSymbol> poolSymbols) {
         super(Text.literal("Smooth Gacha"));
         this.results = new ArrayList<>(results);
+        this.poolSymbols = new ArrayList<>(poolSymbols);
+
+        // Defensive fallback: an old/empty packet can still animate using
+        // the actual results instead of unrelated vanilla filler items.
+        if (this.poolSymbols.isEmpty()) {
+            for (Result result : results) {
+                this.poolSymbols.add(new PoolSymbol(result.stack(), result.rarity(), 1));
+            }
+        }
     }
 
     @Override
-    public boolean shouldPause() {
-        return false;
-    }
+    public boolean shouldPause() { return false; }
 
     @Override
     public void tick() {
@@ -77,9 +70,7 @@ public class GachaScreen extends Screen {
 
         List<Result> pageResults = getPageResults();
         int count = pageResults.size();
-        if (count == 0) {
-            return;
-        }
+        if (count == 0) return;
 
         int centerX = width / 2;
         int centerY = height / 2;
@@ -96,42 +87,38 @@ public class GachaScreen extends Screen {
         );
 
         for (int i = 0; i < count; i++) {
-            int x = startX + i * spacing;
-            renderReel(context, pageResults.get(i), i, x, centerY, delta);
+            renderReel(context, pageResults.get(i), i, startX + i * spacing, centerY, delta);
         }
 
         String footer;
         if (!pageFinished) {
-            footer = "SPACE: skip this page    ESC: reveal all";
+            footer = "[ SPACE ] Skip     [ ESC ] Reveal All";
         } else if (hasNextPage()) {
-            footer = "SPACE / Click: next " + Math.min(PER_PAGE, results.size() - (page + 1) * PER_PAGE) + " pulls";
+            footer = "[ SPACE / CLICK ] Next " + Math.min(PER_PAGE, results.size() - (page + 1) * PER_PAGE) + " Pulls";
         } else {
-            footer = "SPACE / Click / ESC: close";
+            footer = "[ SPACE / CLICK / ESC ] Close";
         }
 
+        // Arcade/gacha-machine style blinking prompt. Smooth pulse instead of
+        // hard on/off flicker so it remains readable.
+        float pulse = (float) ((Math.sin((tick + delta) * 0.22D) + 1.0D) * 0.5D);
+        int gray = 150 + Math.round(105 * pulse);
+        int footerColor = (gray << 16) | (gray << 8) | gray;
         context.drawCenteredTextWithShadow(
                 textRenderer,
                 Text.literal(footer),
                 centerX,
                 Math.min(height - 24, centerY + 112),
-                0xAAAAAA
+                footerColor
         );
 
         super.render(context, mouseX, mouseY, delta);
     }
 
-    private void renderReel(
-            DrawContext context,
-            Result result,
-            int reelIndex,
-            int x,
-            int centerY,
-            float delta
-    ) {
+    private void renderReel(DrawContext context, Result result, int reelIndex, int x, int centerY, float delta) {
         int revealTick = SPIN_TICKS + reelIndex * REVEAL_STAGGER;
         boolean revealed = pageFinished || tick >= revealTick;
 
-        // Dark reel lane.
         context.fill(x - 18, centerY - 62, x + 18, centerY + 63, 0x66000000);
 
         if (revealed) {
@@ -140,54 +127,77 @@ public class GachaScreen extends Screen {
             context.fill(x - 18, centerY - 18, x + 18, centerY + 18, 0xDD101010);
             drawScaledItem(context, result.stack(), x, centerY, 1.45f);
 
-            context.drawCenteredTextWithShadow(
-                    textRenderer,
-                    Text.literal(shortRarity(result.rarity())),
-                    x,
-                    centerY + 31,
-                    color
-            );
-
+            context.drawCenteredTextWithShadow(textRenderer, Text.literal(shortRarity(result.rarity())), x, centerY + 31, color);
             if (result.stack().getCount() > 1) {
-                context.drawCenteredTextWithShadow(
-                        textRenderer,
-                        Text.literal("x" + result.stack().getCount()),
-                        x,
-                        centerY + 43,
-                        0xDDDDDD
-                );
+                context.drawCenteredTextWithShadow(textRenderer, Text.literal("x" + result.stack().getCount()), x, centerY + 43, 0xDDDDDD);
             }
             return;
         }
 
-        float speed = reelSpeed(tick, reelIndex);
-        float phase = ((tick + delta) * speed + reelIndex * 17.0f) % ROW_SPACING;
-        int baseIndex = (int) (((tick * speed) / ROW_SPACING) + reelIndex * 5);
+        // Pachinko / slot-machine motion with a deterministic landing.
+        // The reel is no longer replaced by the result at reveal time. Instead,
+        // its final travel distance is calculated so the actual rolled item is
+        // physically sitting in the selection frame when the reel stops.
+        float localTime = Math.max(0.0f, tick + delta - reelIndex * 1.25f);
+        float clampedTime = Math.min(localTime, SPIN_TICKS);
+        float progress = clampedTime / SPIN_TICKS;
 
-        // Five visible symbols per reel, like a vertical slot machine.
-        for (int row = -2; row <= 2; row++) {
-            float y = centerY + row * ROW_SPACING + phase - ROW_SPACING / 2.0f;
-            int itemIndex = Math.floorMod(baseIndex + row, FILLER_ITEMS.size());
-            ItemStack shown = FILLER_ITEMS.get(itemIndex);
+        // Quintic ease-out: very fast launch, then progressively slower motion,
+        // reaching exactly zero velocity at the destination.
+        float eased = 1.0f - (float) Math.pow(1.0f - progress, 5.0f);
 
+        int targetPoolIndex = findPoolIndex(result);
+
+        // row == 0 renders symbolAt(baseIndex + reelIndex * 3). Choose a final
+        // base index congruent with the rolled result, then add whole pool loops.
+        // Whole loops never change the final symbol, but make the reel spin long
+        // enough to feel like a real machine.
+        int poolSize = Math.max(1, poolSymbols.size());
+        int finalBaseModulo = Math.floorMod(targetPoolIndex - reelIndex * 3, poolSize);
+        int loops = 5 + reelIndex;
+        int finalBaseIndex = finalBaseModulo + loops * poolSize;
+        float targetTravel = finalBaseIndex * ROW_SPACING;
+
+        float travel = targetTravel * eased;
+        int baseIndex = (int) Math.floor(travel / ROW_SPACING);
+        float phase = travel - baseIndex * ROW_SPACING;
+
+        // Six symbols keeps the reel filled while moving. Every symbol comes
+        // from the selected config pool: no unrelated filler items.
+        for (int row = -3; row <= 2; row++) {
+            float y = centerY + row * ROW_SPACING + phase;
+            PoolSymbol symbol = symbolAt(baseIndex - row + reelIndex * 3);
             float distance = Math.abs(y - centerY);
-            float scale = distance < 13 ? 1.18f : 0.78f;
-            drawScaledItem(context, shown, x, Math.round(y), scale);
+            float scale = distance < 14 ? 1.18f : (distance < 42 ? 0.90f : 0.72f);
+            drawScaledItem(context, symbol.stack(), x, Math.round(y), scale);
         }
 
-        // Selection frame in the middle of each reel.
+        drawSelectionFrame(context, x, centerY);
+    }
+
+    private PoolSymbol symbolAt(int index) {
+        return poolSymbols.get(Math.floorMod(index, poolSymbols.size()));
+    }
+
+    private int findPoolIndex(Result result) {
+        for (int i = 0; i < poolSymbols.size(); i++) {
+            PoolSymbol symbol = poolSymbols.get(i);
+            if (symbol.stack().getItem() == result.stack().getItem()
+                    && symbol.rarity() == result.rarity()) {
+                return i;
+            }
+        }
+
+        // Defensive fallback for old packets/config changes. Normally every
+        // rolled result is guaranteed to exist in the pool sent by the server.
+        return 0;
+    }
+
+    private void drawSelectionFrame(DrawContext context, int x, int centerY) {
         context.fill(x - 20, centerY - 20, x - 18, centerY + 20, 0xFFFFFFFF);
         context.fill(x + 18, centerY - 20, x + 20, centerY + 20, 0xFFFFFFFF);
         context.fill(x - 20, centerY - 20, x + 20, centerY - 18, 0xFFFFFFFF);
         context.fill(x - 20, centerY + 18, x + 20, centerY + 20, 0xFFFFFFFF);
-    }
-
-    private float reelSpeed(int currentTick, int reelIndex) {
-        int localTick = Math.max(0, currentTick - reelIndex);
-        if (localTick < 20) return 5.8f;
-        if (localTick < 36) return 4.2f;
-        if (localTick < 48) return 2.8f;
-        return 1.45f;
     }
 
     private void drawScaledItem(DrawContext context, ItemStack stack, int centerX, int centerY, float scale) {
@@ -225,13 +235,8 @@ public class GachaScreen extends Screen {
         return results.subList(from, to);
     }
 
-    private int getPageCount() {
-        return Math.max(1, (results.size() + PER_PAGE - 1) / PER_PAGE);
-    }
-
-    private boolean hasNextPage() {
-        return (page + 1) * PER_PAGE < results.size();
-    }
+    private int getPageCount() { return Math.max(1, (results.size() + PER_PAGE - 1) / PER_PAGE); }
+    private boolean hasNextPage() { return (page + 1) * PER_PAGE < results.size(); }
 
     private void revealPage() {
         pageFinished = true;
@@ -243,7 +248,6 @@ public class GachaScreen extends Screen {
             revealPage();
             return;
         }
-
         if (hasNextPage()) {
             page++;
             tick = 0;
@@ -265,22 +269,15 @@ public class GachaScreen extends Screen {
             nextOrClose();
             return true;
         }
-
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             if (!pageFinished || hasNextPage()) {
-                // ESC skips every remaining reel/page and shows all rewards at once
-                // by jumping to the final page in revealed state.
                 page = getPageCount() - 1;
                 revealPage();
                 return true;
             }
-
-            if (client != null) {
-                client.setScreen(null);
-            }
+            if (client != null) client.setScreen(null);
             return true;
         }
-
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }

@@ -26,9 +26,18 @@ public class SmoothQuestGachaClient implements ClientModInitializer {
                         results.add(new GachaScreen.Result(stack, rarity));
                     }
 
+                    int poolCount = Math.min(buf.readVarInt(), OpenGachaPacket.MAX_POOL_PREVIEW);
+                    List<GachaScreen.PoolSymbol> pool = new ArrayList<>(poolCount);
+                    for (int i = 0; i < poolCount; i++) {
+                        ItemStack stack = buf.readItemStack();
+                        GachaRarity rarity = buf.readEnumConstant(GachaRarity.class);
+                        int weight = Math.max(1, buf.readVarInt());
+                        pool.add(new GachaScreen.PoolSymbol(stack, rarity, weight));
+                    }
+
                     client.execute(() -> {
                         if (!results.isEmpty()) {
-                            client.setScreen(new GachaScreen(results));
+                            client.setScreen(new GachaScreen(results, pool));
                         }
                     });
                 }
