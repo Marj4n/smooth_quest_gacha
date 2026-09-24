@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "smooth_quest_gacha",
+  "version": "${version}",
+  "name": "Smooth Quest Gacha",
+  "description": "for my modpack Smooth Odyssey",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/smooth_quest_gacha/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "org.Marj4n.smooth_quest_gacha.client.SmoothQuestGachaDataGenerator"
+    ],
+    "client": [
+      "org.Marj4n.smooth_quest_gacha.client.SmoothQuestGachaClient"
+    ],
+    "main": [
+      "org.Marj4n.smooth_quest_gacha.SmoothQuestGacha"
+    ]
+  },
+  "mixins": [
+    "smooth_quest_gacha.mixins.json",
+    {
+      "config": "smooth_quest_gacha.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}",
+    "ftbquests": "*"
+  }
+}
