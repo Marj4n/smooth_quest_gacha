@@ -1,0 +1,7 @@
+{
+  "ftbquests.reward.smooth_quest_gacha.gacha.pool": "Gacha Pool",
+  "ftbquests.reward.smooth_quest_gacha.gacha.pool.tooltip": "Select a reward pool from gacha_pools.json.",
+  "ftbquests.reward.smooth_quest_gacha.gacha.rolls": "Rolls",
+  "ftbquests.reward.smooth_quest_gacha.gacha.rolls.tooltip": "Number of rewards rolled when claimed. Range: 1-64.",
+  "reward.smooth_quest_gacha.gacha": "Smooth Gacha"
+}
