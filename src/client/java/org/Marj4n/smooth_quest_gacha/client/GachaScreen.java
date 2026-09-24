@@ -9,6 +9,7 @@ import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -40,23 +41,37 @@ public class GachaScreen extends Screen {
     private int celebrationStartTick = -1;
     private final List<Confetti> confetti = new ArrayList<>();
 
+    // Cached once per page instead of rebuilding sub-lists and scanning the pool
+    // for every reel on every rendered frame.
+    private List<Result> pageResults = List.of();
+    private int[] landingPoolIndices = new int[0];
+
     private static final class Confetti {
-        final float x;
-        final float y;
-        final float vx;
-        final float vy;
+        float x;
+        float y;
+        float previousX;
+        float previousY;
+        float vx;
+        float vy;
+        final float drift;
         final int color;
         final int width;
         final int height;
+        int age;
+        final int lifetime;
 
-        Confetti(float x, float y, float vx, float vy, int color, int width, int height) {
+        Confetti(float x, float y, float vx, float vy, float drift, int color, int width, int height, int lifetime) {
             this.x = x;
             this.y = y;
+            this.previousX = x;
+            this.previousY = y;
             this.vx = vx;
             this.vy = vy;
+            this.drift = drift;
             this.color = color;
             this.width = width;
             this.height = height;
+            this.lifetime = lifetime;
         }
     }
 
@@ -72,6 +87,8 @@ public class GachaScreen extends Screen {
                 this.poolSymbols.add(new PoolSymbol(result.stack(), result.rarity(), 1));
             }
         }
+
+        rebuildPageCache();
     }
 
     @Override
@@ -88,18 +105,19 @@ public class GachaScreen extends Screen {
         tick++;
 
         if (!pageFinished) {
-            int visible = getPageResults().size();
+            int visible = pageResults.size();
             if (tick >= SPIN_TICKS + Math.max(0, visible - 1) * REVEAL_STAGGER) {
                 pageFinished = true;
             }
         }
+
+        updateConfettiPhysics();
     }
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         renderBackground(context);
 
-        List<Result> pageResults = getPageResults();
         int count = pageResults.size();
         if (count == 0) return;
 
@@ -180,7 +198,9 @@ public class GachaScreen extends Screen {
         // reaching exactly zero velocity at the destination.
         float eased = 1.0f - (float) Math.pow(1.0f - progress, 5.0f);
 
-        int targetPoolIndex = findPoolIndex(result);
+        int targetPoolIndex = reelIndex < landingPoolIndices.length
+                ? landingPoolIndices[reelIndex]
+                : 0;
 
         // row == 0 renders symbolAt(baseIndex + reelIndex * 3). Choose a final
         // base index congruent with the rolled result, then add whole pool loops.
@@ -249,7 +269,8 @@ public class GachaScreen extends Screen {
             int color = colors[random.nextInt(colors.length)];
             int w = 2 + random.nextInt(5);
             int h = 3 + random.nextInt(7);
-            confetti.add(new Confetti(x, y, vx, vy, color, w, h));
+            float drift = (random.nextFloat() - 0.5f) * 0.00045f;
+            confetti.add(new Confetti(x, y, vx, vy, drift, color, w, h, 75 + random.nextInt(26)));
         }
 
         // Extra firework-like burst around the legendary banner so the first
@@ -262,7 +283,8 @@ public class GachaScreen extends Screen {
             float vx = (float) Math.cos(angle) * speed;
             float vy = (float) Math.sin(angle) * speed - 0.004f;
             int color = colors[random.nextInt(colors.length)];
-            confetti.add(new Confetti(x, y, vx, vy, color, 2 + random.nextInt(4), 2 + random.nextInt(5)));
+            float drift = (random.nextFloat() - 0.5f) * 0.00035f;
+            confetti.add(new Confetti(x, y, vx, vy, drift, color, 2 + random.nextInt(4), 2 + random.nextInt(5), 55 + random.nextInt(31)));
         }
     }
 
@@ -279,29 +301,28 @@ public class GachaScreen extends Screen {
             context.fill(0, 0, width, height, (alpha << 24) | 0x00FFD54F);
         }
 
-        // Draw confetti after the flash so it always sits visibly on top.
-        // Physics are normalized to screen size: launch -> apex -> gravity fall.
-        final float gravity = 0.00072f;
+        // Physics are updated once per game tick. Rendering only interpolates
+        // between the previous/current positions, which keeps motion smooth at
+        // high FPS without recalculating trajectories for every frame.
         for (int i = 0; i < confetti.size(); i++) {
             Confetti c = confetti.get(i);
-            float sway = (float) Math.sin(age * 0.24f + i * 0.71f) * 0.006f;
-            float px = (c.x + c.vx * age + sway) * width;
-            float py = (c.y + c.vy * age + 0.5f * gravity * age * age) * height;
+            float px = (c.previousX + (c.x - c.previousX) * delta) * width;
+            float py = (c.previousY + (c.y - c.previousY) * delta) * height;
 
-            if (px < -20 || px > width + 20 || py < -20 || py > height + 20) continue;
-
-            // Fake tumbling by alternating between a tall strip and a wide strip.
-            boolean flipped = ((int) (age / 3.0f) + i) % 2 == 0;
+            boolean flipped = ((c.age / 3) + i) % 2 == 0;
             int cw = flipped ? c.width : c.height;
             int ch = flipped ? c.height : Math.max(2, c.width);
             int x = Math.round(px);
             int y = Math.round(py);
-            context.fill(x, y, x + cw, y + ch, c.color);
 
-            // Tiny bright center on some pieces gives a firework sparkle without
-            // spawning any Minecraft world particles.
-            if ((i % 7) == 0 && age < 35.0f) {
-                context.fill(x - 1, y + ch / 2, x + cw + 1, y + ch / 2 + 1, 0xFFFFFFFF);
+            int remaining = c.lifetime - c.age;
+            int alpha = remaining < 15 ? Math.max(0, Math.min(255, remaining * 17)) : 255;
+            int color = (alpha << 24) | (c.color & 0x00FFFFFF);
+            context.fill(x, y, x + cw, y + ch, color);
+
+            if ((i % 7) == 0 && c.age < 35) {
+                int sparkle = (alpha << 24) | 0x00FFFFFF;
+                context.fill(x - 1, y + ch / 2, x + cw + 1, y + ch / 2 + 1, sparkle);
             }
         }
 
@@ -373,11 +394,41 @@ public class GachaScreen extends Screen {
         };
     }
 
-    private List<Result> getPageResults() {
+    private void rebuildPageCache() {
         int from = page * PER_PAGE;
         int to = Math.min(results.size(), from + PER_PAGE);
-        if (from >= to) return List.of();
-        return results.subList(from, to);
+        pageResults = from < to ? results.subList(from, to) : List.of();
+
+        landingPoolIndices = new int[pageResults.size()];
+        for (int i = 0; i < pageResults.size(); i++) {
+            landingPoolIndices[i] = findPoolIndex(pageResults.get(i));
+        }
+    }
+
+    private void updateConfettiPhysics() {
+        if (confetti.isEmpty()) return;
+
+        final float gravity = 0.00072f;
+        final float drag = 0.994f;
+        Iterator<Confetti> iterator = confetti.iterator();
+
+        while (iterator.hasNext()) {
+            Confetti c = iterator.next();
+            c.previousX = c.x;
+            c.previousY = c.y;
+
+            c.vx *= drag;
+            c.x += c.vx + c.drift;
+            c.y += c.vy;
+            c.vy += gravity;
+            c.age++;
+
+            // Remove dead/off-screen pieces immediately instead of keeping them
+            // in the render loop for the full celebration duration.
+            if (c.age >= c.lifetime || c.x < -0.08f || c.x > 1.08f || c.y > 1.10f) {
+                iterator.remove();
+            }
+        }
     }
 
     private int getPageCount() { return Math.max(1, (results.size() + PER_PAGE - 1) / PER_PAGE); }
@@ -399,6 +450,7 @@ public class GachaScreen extends Screen {
             pageFinished = false;
             celebrationStartTick = -1;
             confetti.clear();
+            rebuildPageCache();
         } else if (client != null) {
             client.setScreen(null);
         }
@@ -421,6 +473,7 @@ public class GachaScreen extends Screen {
                 page = getPageCount() - 1;
                 celebrationStartTick = -1;
                 confetti.clear();
+                rebuildPageCache();
                 revealPage();
                 return true;
             }
