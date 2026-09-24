@@ -264,6 +264,6 @@ public class GachaReward extends Reward {
         // One packet for the whole pull. This prevents Rolls > 1 from opening
         // several screens on top of each other and lets the client paginate
         // eight reels at a time.
-        OpenGachaPacket.send(player, results);
+        OpenGachaPacket.send(player, results, pool.getEntries());
     }
 }
