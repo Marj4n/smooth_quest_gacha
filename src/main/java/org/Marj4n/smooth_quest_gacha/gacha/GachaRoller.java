@@ -1,4 +1,4 @@
-package org.Marj4n.smooth_quest_gacha.gacha;
+package org.marj4n.smooth_quest_gacha.gacha;
 
 import net.minecraft.util.math.random.Random;
 

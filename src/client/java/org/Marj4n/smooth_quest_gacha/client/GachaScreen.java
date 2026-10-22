@@ -1,6 +1,6 @@
-package org.Marj4n.smooth_quest_gacha.client;
+package org.marj4n.smooth_quest_gacha.client;
 
-import org.Marj4n.smooth_quest_gacha.gacha.GachaRarity;
+import org.marj4n.smooth_quest_gacha.gacha.GachaRarity;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
