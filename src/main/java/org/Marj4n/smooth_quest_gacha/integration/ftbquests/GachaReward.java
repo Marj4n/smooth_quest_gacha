@@ -1,11 +1,11 @@
-package org.Marj4n.smooth_quest_gacha.integration.ftbquests;
+package org.marj4n.smooth_quest_gacha.integration.ftbquests;
 
-import org.Marj4n.smooth_quest_gacha.SmoothQuestGacha;
-import org.Marj4n.smooth_quest_gacha.config.GachaConfigManager;
-import org.Marj4n.smooth_quest_gacha.gacha.GachaEntry;
-import org.Marj4n.smooth_quest_gacha.gacha.GachaPool;
-import org.Marj4n.smooth_quest_gacha.gacha.GachaRoller;
-import org.Marj4n.smooth_quest_gacha.network.OpenGachaPacket;
+import org.marj4n.smooth_quest_gacha.SmoothQuestGacha;
+import org.marj4n.smooth_quest_gacha.config.GachaConfigManager;
+import org.marj4n.smooth_quest_gacha.gacha.GachaEntry;
+import org.marj4n.smooth_quest_gacha.gacha.GachaPool;
+import org.marj4n.smooth_quest_gacha.gacha.GachaRoller;
+import org.marj4n.smooth_quest_gacha.network.OpenGachaPacket;
 
 import dev.ftb.mods.ftblibrary.config.ConfigGroup;
 import dev.ftb.mods.ftblibrary.config.NameMap;

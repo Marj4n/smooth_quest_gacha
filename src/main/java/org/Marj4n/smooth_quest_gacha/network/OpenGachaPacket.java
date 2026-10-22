@@ -1,7 +1,7 @@
-package org.Marj4n.smooth_quest_gacha.network;
+package org.marj4n.smooth_quest_gacha.network;
 
-import org.Marj4n.smooth_quest_gacha.SmoothQuestGacha;
-import org.Marj4n.smooth_quest_gacha.gacha.GachaEntry;
+import org.marj4n.smooth_quest_gacha.SmoothQuestGacha;
+import org.marj4n.smooth_quest_gacha.gacha.GachaEntry;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.PacketByteBuf;

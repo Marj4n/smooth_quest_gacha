@@ -1,4 +1,4 @@
-package org.Marj4n.smooth_quest_gacha.gacha;
+package org.marj4n.smooth_quest_gacha.gacha;
 
 import java.util.ArrayList;
 import java.util.Collections;

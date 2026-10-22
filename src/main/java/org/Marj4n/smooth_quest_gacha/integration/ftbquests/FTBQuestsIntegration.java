@@ -1,4 +1,4 @@
-package org.Marj4n.smooth_quest_gacha.integration.ftbquests;
+package org.marj4n.smooth_quest_gacha.integration.ftbquests;
 
 import dev.ftb.mods.ftblibrary.icon.Icon;
 import dev.ftb.mods.ftbquests.quest.reward.RewardType;

@@ -1,7 +1,7 @@
-package org.Marj4n.smooth_quest_gacha.client;
+package org.marj4n.smooth_quest_gacha.client;
 
-import org.Marj4n.smooth_quest_gacha.gacha.GachaRarity;
-import org.Marj4n.smooth_quest_gacha.network.OpenGachaPacket;
+import org.marj4n.smooth_quest_gacha.gacha.GachaRarity;
+import org.marj4n.smooth_quest_gacha.network.OpenGachaPacket;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;

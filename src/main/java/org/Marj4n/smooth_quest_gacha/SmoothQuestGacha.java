@@ -1,7 +1,7 @@
-package org.Marj4n.smooth_quest_gacha;
+package org.marj4n.smooth_quest_gacha;
 
-import org.Marj4n.smooth_quest_gacha.config.GachaConfigManager;
-import org.Marj4n.smooth_quest_gacha.integration.ftbquests.FTBQuestsIntegration;
+import org.marj4n.smooth_quest_gacha.config.GachaConfigManager;
+import org.marj4n.smooth_quest_gacha.integration.ftbquests.FTBQuestsIntegration;
 
 import net.fabricmc.api.ModInitializer;
 

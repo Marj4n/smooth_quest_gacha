@@ -4,20 +4,20 @@
   "version": "${version}",
   "name": "Smooth Quest Gacha",
   "description": "for my modpack Smooth Odyssey",
-  "authors": [],
+  "authors": ["Marj4n"],
   "contact": {},
   "license": "All-Rights-Reserved",
   "icon": "assets/smooth_quest_gacha/icon.png",
   "environment": "*",
   "entrypoints": {
     "fabric-datagen": [
-      "org.Marj4n.smooth_quest_gacha.client.SmoothQuestGachaDataGenerator"
+      "org.marj4n.smooth_quest_gacha.client.SmoothQuestGachaDataGenerator"
     ],
     "client": [
-      "org.Marj4n.smooth_quest_gacha.client.SmoothQuestGachaClient"
+      "org.marj4n.smooth_quest_gacha.client.SmoothQuestGachaClient"
     ],
     "main": [
-      "org.Marj4n.smooth_quest_gacha.SmoothQuestGacha"
+      "org.marj4n.smooth_quest_gacha.SmoothQuestGacha"
     ]
   },
   "mixins": [
