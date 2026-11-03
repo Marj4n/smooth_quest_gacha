@@ -16,7 +16,9 @@ import java.util.Random;
 public class GachaScreen extends Screen {
 
     public record Result(ItemStack stack, GachaRarity rarity) {
-        public Result { stack = stack.copy(); }
+        public Result {
+            stack = stack.copy();
+        }
     }
 
     public record PoolSymbol(ItemStack stack, GachaRarity rarity, int weight) {
@@ -60,7 +62,16 @@ public class GachaScreen extends Screen {
         int age;
         final int lifetime;
 
-        Confetti(float x, float y, float vx, float vy, float drift, int color, int width, int height, int lifetime) {
+        Confetti(
+                float x,
+                float y,
+                float vx,
+                float vy,
+                float drift,
+                int color,
+                int width,
+                int height,
+                int lifetime) {
             this.x = x;
             this.y = y;
             this.previousX = x;
@@ -92,7 +103,9 @@ public class GachaScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() { return false; }
+    public boolean shouldPause() {
+        return false;
+    }
 
     @Override
     public void tick() {
@@ -132,8 +145,7 @@ public class GachaScreen extends Screen {
                 Text.literal("Gacha Pull  " + (page + 1) + "/" + getPageCount()),
                 centerX,
                 Math.max(20, centerY - 112),
-                0xFFFFFF
-        );
+                0xFFFFFF);
 
         for (int i = 0; i < count; i++) {
             renderReel(context, pageResults.get(i), i, startX + i * spacing, centerY, delta);
@@ -146,7 +158,10 @@ public class GachaScreen extends Screen {
         if (!pageFinished) {
             footer = "[ SPACE ] Skip     [ ESC ] Reveal All";
         } else if (hasNextPage()) {
-            footer = "[ SPACE / CLICK ] Next " + Math.min(PER_PAGE, results.size() - (page + 1) * PER_PAGE) + " Pulls";
+            footer =
+                    "[ SPACE / CLICK ] Next "
+                            + Math.min(PER_PAGE, results.size() - (page + 1) * PER_PAGE)
+                            + " Pulls";
         } else {
             footer = "[ SPACE / CLICK / ESC ] Close";
         }
@@ -161,13 +176,13 @@ public class GachaScreen extends Screen {
                 Text.literal(footer),
                 centerX,
                 Math.min(height - 24, centerY + 112),
-                footerColor
-        );
+                footerColor);
 
         super.render(context, mouseX, mouseY, delta);
     }
 
-    private void renderReel(DrawContext context, Result result, int reelIndex, int x, int centerY, float delta) {
+    private void renderReel(
+            DrawContext context, Result result, int reelIndex, int x, int centerY, float delta) {
         int revealTick = SPIN_TICKS + reelIndex * REVEAL_STAGGER;
         boolean revealed = pageFinished || tick >= revealTick;
 
@@ -175,13 +190,24 @@ public class GachaScreen extends Screen {
 
         if (revealed) {
             int color = rarityColor(result.rarity());
-            context.fill(x - 20, centerY - 20, x + 20, centerY + 20, 0xAA000000 | (color & 0x00FFFFFF));
+            context.fill(
+                    x - 20, centerY - 20, x + 20, centerY + 20, 0xAA000000 | (color & 0x00FFFFFF));
             context.fill(x - 18, centerY - 18, x + 18, centerY + 18, 0xDD101010);
             drawScaledItem(context, result.stack(), x, centerY, 1.45f);
 
-            context.drawCenteredTextWithShadow(textRenderer, Text.literal(shortRarity(result.rarity())), x, centerY + 31, color);
+            context.drawCenteredTextWithShadow(
+                    textRenderer,
+                    Text.literal(shortRarity(result.rarity())),
+                    x,
+                    centerY + 31,
+                    color);
             if (result.stack().getCount() > 1) {
-                context.drawCenteredTextWithShadow(textRenderer, Text.literal("x" + result.stack().getCount()), x, centerY + 43, 0xDDDDDD);
+                context.drawCenteredTextWithShadow(
+                        textRenderer,
+                        Text.literal("x" + result.stack().getCount()),
+                        x,
+                        centerY + 43,
+                        0xDDDDDD);
             }
             return;
         }
@@ -198,9 +224,8 @@ public class GachaScreen extends Screen {
         // reaching exactly zero velocity at the destination.
         float eased = 1.0f - (float) Math.pow(1.0f - progress, 5.0f);
 
-        int targetPoolIndex = reelIndex < landingPoolIndices.length
-                ? landingPoolIndices[reelIndex]
-                : 0;
+        int targetPoolIndex =
+                reelIndex < landingPoolIndices.length ? landingPoolIndices[reelIndex] : 0;
 
         // row == 0 renders symbolAt(baseIndex + reelIndex * 3). Choose a final
         // base index congruent with the rolled result, then add whole pool loops.
@@ -249,17 +274,17 @@ public class GachaScreen extends Screen {
         confetti.clear();
         Random random = new Random(System.nanoTime() ^ (page * 9973L));
         int[] colors = {
-                0xFFFFD54F, 0xFFFF5252, 0xFF69F0AE, 0xFF40C4FF,
-                0xFFE040FB, 0xFFFFFFFF, 0xFFFF9100, 0xFFFF4081,
-                0xFF7C4DFF, 0xFFB2FF59
+            0xFFFFD54F, 0xFFFF5252, 0xFF69F0AE, 0xFF40C4FF,
+            0xFFE040FB, 0xFFFFFFFF, 0xFFFF9100, 0xFFFF4081,
+            0xFF7C4DFF, 0xFFB2FF59
         };
 
         // Two real confetti cannons from the lower corners. The values are
         // normalized so the effect scales with every GUI resolution.
         for (int i = 0; i < CONFETTI_COUNT; i++) {
             boolean left = (i & 1) == 0;
-            float x = left ? 0.08f + random.nextFloat() * 0.10f
-                           : 0.82f + random.nextFloat() * 0.10f;
+            float x =
+                    left ? 0.08f + random.nextFloat() * 0.10f : 0.82f + random.nextFloat() * 0.10f;
             float y = 0.82f + random.nextFloat() * 0.10f;
 
             // Velocity is stored in screen-fraction/tick. Both cannons shoot
@@ -284,11 +309,22 @@ public class GachaScreen extends Screen {
             float vy = (float) Math.sin(angle) * speed - 0.004f;
             int color = colors[random.nextInt(colors.length)];
             float drift = (random.nextFloat() - 0.5f) * 0.00035f;
-            confetti.add(new Confetti(x, y, vx, vy, drift, color, 2 + random.nextInt(4), 2 + random.nextInt(5), 55 + random.nextInt(31)));
+            confetti.add(
+                    new Confetti(
+                            x,
+                            y,
+                            vx,
+                            vy,
+                            drift,
+                            color,
+                            2 + random.nextInt(4),
+                            2 + random.nextInt(5),
+                            55 + random.nextInt(31)));
         }
     }
 
-    private void renderLegendaryCelebration(DrawContext context, int centerX, int centerY, float delta) {
+    private void renderLegendaryCelebration(
+            DrawContext context, int centerX, int centerY, float delta) {
         if (celebrationStartTick < 0) return;
 
         float age = Math.max(0.0f, tick + delta - celebrationStartTick);
@@ -327,17 +363,17 @@ public class GachaScreen extends Screen {
         }
 
         // Big celebratory label, rendered last so the confetti never obscures it.
-        float bounce = age < 18.0f
-                ? 1.0f + (float) Math.sin(age * 0.72f) * (1.0f - age / 18.0f) * 0.24f
-                : 1.0f;
+        float bounce =
+                age < 18.0f
+                        ? 1.0f + (float) Math.sin(age * 0.72f) * (1.0f - age / 18.0f) * 0.24f
+                        : 1.0f;
         float pulse = 1.0f + (float) Math.sin(age * 0.18f) * 0.035f;
         float labelScale = bounce * pulse;
         context.getMatrices().push();
         context.getMatrices().translate(centerX, centerY - 91, 300);
         context.getMatrices().scale(labelScale, labelScale, 1.0f);
         context.drawCenteredTextWithShadow(
-                textRenderer, Text.literal("LEGENDARY!!!"), 0, 0, 0xFFFF55
-        );
+                textRenderer, Text.literal("LEGENDARY!!!"), 0, 0, 0xFFFF55);
         context.getMatrices().pop();
     }
 
@@ -366,7 +402,8 @@ public class GachaScreen extends Screen {
         context.fill(x - 20, centerY + 18, x + 20, centerY + 20, 0xFFFFFFFF);
     }
 
-    private void drawScaledItem(DrawContext context, ItemStack stack, int centerX, int centerY, float scale) {
+    private void drawScaledItem(
+            DrawContext context, ItemStack stack, int centerX, int centerY, float scale) {
         context.getMatrices().push();
         context.getMatrices().translate(centerX, centerY, 0);
         context.getMatrices().scale(scale, scale, 1.0f);
@@ -431,8 +468,13 @@ public class GachaScreen extends Screen {
         }
     }
 
-    private int getPageCount() { return Math.max(1, (results.size() + PER_PAGE - 1) / PER_PAGE); }
-    private boolean hasNextPage() { return (page + 1) * PER_PAGE < results.size(); }
+    private int getPageCount() {
+        return Math.max(1, (results.size() + PER_PAGE - 1) / PER_PAGE);
+    }
+
+    private boolean hasNextPage() {
+        return (page + 1) * PER_PAGE < results.size();
+    }
 
     private void revealPage() {
         pageFinished = true;

@@ -10,26 +10,16 @@ public final class FTBQuestsIntegration {
 
     public static RewardType GACHA_REWARD;
 
-    private FTBQuestsIntegration() {
-    }
+    private FTBQuestsIntegration() {}
 
     public static void register() {
 
-        GACHA_REWARD = RewardTypes.register(
-                new Identifier(
-                        "smooth_quest_gacha",
-                        "gacha"
-                ),
+        GACHA_REWARD =
+                RewardTypes.register(
+                        new Identifier("smooth_quest_gacha", "gacha"),
+                        GachaReward::new,
+                        () -> Icon.getIcon("minecraft:item/ender_eye"));
 
-                GachaReward::new,
-
-                () -> Icon.getIcon(
-                        "minecraft:item/ender_eye"
-                )
-        );
-
-        GACHA_REWARD.setDisplayName(
-                Text.literal("Smooth Gacha")
-        );
+        GACHA_REWARD.setDisplayName(Text.literal("Smooth Gacha"));
     }
 }

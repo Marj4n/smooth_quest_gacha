@@ -31,10 +31,7 @@ public class GachaReward extends Reward {
     private String poolId = DEFAULT_POOL;
     private int rolls = DEFAULT_ROLLS;
 
-    public GachaReward(
-            long id,
-            Quest quest
-    ) {
+    public GachaReward(long id, Quest quest) {
         super(id, quest);
     }
 
@@ -51,15 +48,9 @@ public class GachaReward extends Reward {
 
         super.writeData(nbt);
 
-        nbt.putString(
-                "pool",
-                poolId
-        );
+        nbt.putString("pool", poolId);
 
-        nbt.putInt(
-                "rolls",
-                rolls
-        );
+        nbt.putInt("rolls", rolls);
     }
 
     /*
@@ -72,8 +63,7 @@ public class GachaReward extends Reward {
 
         if (nbt.contains("pool")) {
 
-            String loadedPool =
-                    nbt.getString("pool");
+            String loadedPool = nbt.getString("pool");
 
             if (!loadedPool.isBlank()) {
                 poolId = loadedPool;
@@ -82,10 +72,7 @@ public class GachaReward extends Reward {
 
         if (nbt.contains("rolls")) {
 
-            rolls = Math.max(
-                    1,
-                    nbt.getInt("rolls")
-            );
+            rolls = Math.max(1, nbt.getInt("rolls"));
         }
     }
 
@@ -97,14 +84,9 @@ public class GachaReward extends Reward {
 
         super.writeNetData(buffer);
 
-        buffer.writeString(
-                poolId,
-                256
-        );
+        buffer.writeString(poolId, 256);
 
-        buffer.writeVarInt(
-                rolls
-        );
+        buffer.writeVarInt(rolls);
     }
 
     @Override
@@ -112,34 +94,22 @@ public class GachaReward extends Reward {
 
         super.readNetData(buffer);
 
-        poolId =
-                buffer.readString(256);
+        poolId = buffer.readString(256);
 
-        rolls =
-                Math.max(
-                        1,
-                        buffer.readVarInt()
-                );
+        rolls = Math.max(1, buffer.readVarInt());
     }
 
     /*
      * Fields displayed by FTB Quests editor.
      */
     @Override
-    public void fillConfigGroup(
-            ConfigGroup group
-    ) {
+    public void fillConfigGroup(ConfigGroup group) {
 
         super.fillConfigGroup(group);
 
-        List<String> availablePools =
-                new ArrayList<>(
-                        GachaConfigManager.getPools().keySet()
-                );
+        List<String> availablePools = new ArrayList<>(GachaConfigManager.getPools().keySet());
 
-        availablePools.sort(
-                Comparator.naturalOrder()
-        );
+        availablePools.sort(Comparator.naturalOrder());
 
         // Keep the currently saved value visible even if the pool was
         // removed from the config after this quest was created.
@@ -153,69 +123,36 @@ public class GachaReward extends Reward {
         }
 
         String defaultPool =
-                availablePools.contains(DEFAULT_POOL)
-                        ? DEFAULT_POOL
-                        : availablePools.get(0);
+                availablePools.contains(DEFAULT_POOL) ? DEFAULT_POOL : availablePools.get(0);
 
         NameMap<String> poolNames =
-                NameMap.of(
-                                defaultPool,
-                                availablePools
-                        )
+                NameMap.of(defaultPool, availablePools)
                         .id(value -> value)
-                        .name(value -> {
+                        .name(
+                                value -> {
+                                    GachaPool pool = GachaConfigManager.getPool(value);
 
-                            GachaPool pool =
-                                    GachaConfigManager.getPool(value);
+                                    if (pool == null) {
+                                        return Text.literal(value + " (Missing)");
+                                    }
 
-                            if (pool == null) {
-                                return Text.literal(
-                                        value + " (Missing)"
-                                );
-                            }
+                                    int entries = pool.getEntries().size();
 
-                            int entries =
-                                    pool.getEntries().size();
-
-                            return Text.literal(
-                                    value
-                                            + " ("
-                                            + entries
-                                            + (entries == 1
-                                            ? " reward)"
-                                            : " rewards)")
-                            );
-                        })
+                                    return Text.literal(
+                                            value
+                                                    + " ("
+                                                    + entries
+                                                    + (entries == 1 ? " reward)" : " rewards)"));
+                                })
                         .create();
 
-        group.addEnum(
-                "pool",
-                poolId,
-                value -> poolId = value,
-                poolNames,
-                defaultPool
-        );
+        group.addEnum("pool", poolId, value -> poolId = value, poolNames, defaultPool);
 
-        group.addInt(
-                "rolls",
-                rolls,
-                value ->
-                        rolls =
-                                Math.max(
-                                        1,
-                                        value
-                                ),
-                DEFAULT_ROLLS,
-                1,
-                64
-        );
+        group.addInt("rolls", rolls, value -> rolls = Math.max(1, value), DEFAULT_ROLLS, 1, 64);
     }
 
     @Override
-    public void claim(
-            ServerPlayerEntity player,
-            boolean notify
-    ) {
+    public void claim(ServerPlayerEntity player, boolean notify) {
 
         GachaPool pool = GachaConfigManager.getPool(poolId);
 
@@ -223,8 +160,7 @@ public class GachaReward extends Reward {
             SmoothQuestGacha.LOGGER.warn(
                     "Player {} tried to claim Smooth Gacha with missing or empty pool '{}'.",
                     player.getName().getString(),
-                    poolId
-            );
+                    poolId);
             return;
         }
 
@@ -238,8 +174,7 @@ public class GachaReward extends Reward {
                 SmoothQuestGacha.LOGGER.warn(
                         "Gacha pool '{}' returned no result for player {}.",
                         poolId,
-                        player.getName().getString()
-                );
+                        player.getName().getString());
                 continue;
             }
 
@@ -257,8 +192,7 @@ public class GachaReward extends Reward {
                     result.getItem().getItem().toString(),
                     result.getItem().getCount(),
                     result.getRarity(),
-                    poolId
-            );
+                    poolId);
         }
 
         // One packet for the whole pull. This prevents Rolls > 1 from opening

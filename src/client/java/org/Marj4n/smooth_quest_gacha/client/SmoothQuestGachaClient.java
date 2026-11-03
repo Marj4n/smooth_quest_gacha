@@ -35,12 +35,12 @@ public class SmoothQuestGachaClient implements ClientModInitializer {
                         pool.add(new GachaScreen.PoolSymbol(stack, rarity, weight));
                     }
 
-                    client.execute(() -> {
-                        if (!results.isEmpty()) {
-                            client.setScreen(new GachaScreen(results, pool));
-                        }
-                    });
-                }
-        );
+                    client.execute(
+                            () -> {
+                                if (!results.isEmpty()) {
+                                    client.setScreen(new GachaScreen(results, pool));
+                                }
+                            });
+                });
     }
 }
