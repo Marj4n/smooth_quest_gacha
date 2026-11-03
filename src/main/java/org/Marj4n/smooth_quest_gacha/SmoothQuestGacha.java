@@ -10,13 +10,9 @@ import org.slf4j.LoggerFactory;
 
 public class SmoothQuestGacha implements ModInitializer {
 
-    public static final String MOD_ID =
-            "smooth_quest_gacha";
+    public static final String MOD_ID = "smooth_quest_gacha";
 
-    public static final Logger LOGGER =
-            LoggerFactory.getLogger(
-                    "Smooth Quest Gacha"
-            );
+    public static final Logger LOGGER = LoggerFactory.getLogger("Smooth Quest Gacha");
 
     @Override
     public void onInitialize() {
@@ -25,8 +21,6 @@ public class SmoothQuestGacha implements ModInitializer {
 
         FTBQuestsIntegration.register();
 
-        LOGGER.info(
-                "Smooth Quest Gacha initialized!"
-        );
+        LOGGER.info("Smooth Quest Gacha initialized!");
     }
 }

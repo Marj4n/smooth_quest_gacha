@@ -8,11 +8,7 @@ public class GachaEntry {
     private final GachaRarity rarity;
     private final int weight;
 
-    public GachaEntry(
-            ItemStack item,
-            GachaRarity rarity,
-            int weight
-    ) {
+    public GachaEntry(ItemStack item, GachaRarity rarity, int weight) {
         this.item = item;
         this.rarity = rarity;
         this.weight = Math.max(1, weight);

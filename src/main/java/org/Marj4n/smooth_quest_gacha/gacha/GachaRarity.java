@@ -1,7 +1,6 @@
 package org.Marj4n.smooth_quest_gacha.gacha;
 
 public enum GachaRarity {
-
     COMMON("Common"),
     UNCOMMON("Uncommon"),
     RARE("Rare"),

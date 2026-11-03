@@ -4,13 +4,9 @@ import net.minecraft.util.math.random.Random;
 
 public final class GachaRoller {
 
-    private GachaRoller() {
-    }
+    private GachaRoller() {}
 
-    public static GachaEntry roll(
-            GachaPool pool,
-            Random random
-    ) {
+    public static GachaEntry roll(GachaPool pool, Random random) {
 
         if (pool == null || pool.isEmpty()) {
             return null;
@@ -36,8 +32,6 @@ public final class GachaRoller {
         }
 
         // Safety fallback
-        return pool.getEntries().get(
-                pool.getEntries().size() - 1
-        );
+        return pool.getEntries().get(pool.getEntries().size() - 1);
     }
 }

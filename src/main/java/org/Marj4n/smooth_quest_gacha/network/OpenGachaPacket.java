@@ -16,10 +16,10 @@ public final class OpenGachaPacket {
     public static final int MAX_RESULTS = 64;
     public static final int MAX_POOL_PREVIEW = 256;
 
-    private OpenGachaPacket() {
-    }
+    private OpenGachaPacket() {}
 
-    public static void send(ServerPlayerEntity player, List<GachaEntry> results, List<GachaEntry> poolEntries) {
+    public static void send(
+            ServerPlayerEntity player, List<GachaEntry> results, List<GachaEntry> poolEntries) {
         if (results == null || results.isEmpty()) {
             return;
         }
